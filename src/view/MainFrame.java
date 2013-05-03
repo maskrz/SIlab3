@@ -92,8 +92,12 @@ public class MainFrame extends javax.swing.JFrame {
     // End of variables declaration//GEN-END:variables
 
     void startGomoku() {
-        sp.setVisible(false);
         GomokuFrame gf = new GomokuFrame();
         gf.setVisible(true);
+    }
+
+    void startReversi() {
+        ReversiFrame rf = new ReversiFrame();
+        rf.setVisible(true);
     }
 }
