@@ -9,6 +9,8 @@ import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.ArrayList;
+import structures.Node;
 
 /**
  *
@@ -22,7 +24,9 @@ public class ReversiFrame extends javax.swing.JFrame {
     public int[][] tab;
     int player;
     boolean started;
-    public boolean[] td;
+    boolean pawnAmount;
+    boolean moves;
+    boolean pawnPositions;
 
     public ReversiFrame() {
         initComponents();
@@ -31,9 +35,11 @@ public class ReversiFrame extends javax.swing.JFrame {
         tab[3][4] = -1;
         tab[4][3] = -1;
         tab[4][4] = 1;
-        td = new boolean[8];
         player = 1;
         started = false;
+        pawnAmount = true;
+        pawnPositions = true;
+        moves = true;
         board.addMouseListener(new MouseListener() {
 
             @Override
@@ -46,10 +52,16 @@ public class ReversiFrame extends javax.swing.JFrame {
                     y /= 70;
 
                     if (tab[x][y] == 0) {
-                        System.out.println(canSetPawn(x, y, player, tab));
-                        setPawn(x, y);
+                        //System.out.println(canSetPawn(x, y, player, tab));
+                        boolean[] td = new boolean[8];
+                        if (canSetPawn(x, y, player, tab, td)) {
+                            setPawn(x, y, player, tab, td);
+                            drawBoard();
+                            player = (player == 1) ? -1 : 1;
+                        }
+                        System.out.println(boardRating(tab));
                     }
-                    
+
                 }
             }
 
@@ -82,6 +94,9 @@ public class ReversiFrame extends javax.swing.JFrame {
 
         board = new javax.swing.JPanel();
         jButton1 = new javax.swing.JButton();
+        jButton2 = new javax.swing.JButton();
+        jButton3 = new javax.swing.JButton();
+        jButton4 = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -105,27 +120,67 @@ public class ReversiFrame extends javax.swing.JFrame {
             }
         });
 
+        jButton2.setText("jButton2");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
+
+        jButton3.setText("tree test");
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton3ActionPerformed(evt);
+            }
+        });
+
+        jButton4.setText("mt test");
+        jButton4.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton4ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(board, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(236, 236, 236)
-                        .addComponent(jButton1))
-                    .addGroup(layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(board, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(345, Short.MAX_VALUE))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(jButton3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jButton4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGap(319, 319, 319)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jButton2)
+                            .addGroup(layout.createSequentialGroup()
+                                .addGap(153, 153, 153)
+                                .addComponent(jButton1)))))
+                .addContainerGap(285, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(board, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 66, Short.MAX_VALUE)
-                .addComponent(jButton1))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 18, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addComponent(jButton3)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addGap(0, 19, Short.MAX_VALUE)
+                                .addComponent(jButton1))
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jButton4)
+                                .addGap(0, 0, Short.MAX_VALUE))))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addComponent(jButton2)
+                        .addGap(26, 26, 26))))
         );
 
         pack();
@@ -135,6 +190,38 @@ public class ReversiFrame extends javax.swing.JFrame {
         drawBoard();
         started = true;
     }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        findBestMove();
+    }//GEN-LAST:event_jButton2ActionPerformed
+
+    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+        Node root = new Node(5);
+        root.addNode(new Node(5));
+        root.addNode(new Node(5));
+        Node t = new Node(1);
+        root.getChildren().get(0).addNode(t);
+        t = new Node(-2);
+        root.getChildren().get(0).addNode(t);
+        t = new Node(-1);
+        root.getChildren().get(0).addNode(t);
+        t = new Node(-3);
+        root.getChildren().get(1).addNode(t);
+        t = new Node(7);
+        root.getChildren().get(1).addNode(t);
+        root.calcEval();
+//        root.getChildren().get(0).calcEval();
+        System.out.println(root.getEval());
+    }//GEN-LAST:event_jButton3ActionPerformed
+
+    private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
+        Node root = new Node(0);
+        makeTreeLevel(tab, root, player);
+        System.out.println(root.getChildren().size());
+        root = root.getChildren().get(2);
+        makeTreeLevel(tab, root, player);
+        System.out.println(root.getChildren().size());
+    }//GEN-LAST:event_jButton4ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -180,6 +267,9 @@ public class ReversiFrame extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel board;
     private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
+    private javax.swing.JButton jButton3;
+    private javax.swing.JButton jButton4;
     // End of variables declaration//GEN-END:variables
 
     private void drawBoard() {
@@ -213,19 +303,16 @@ public class ReversiFrame extends javax.swing.JFrame {
         }
     }
 
-    private void setPawn(int x, int y) {
-        if (canSetPawn(x, y, player, tab)) {
-            tab[x][y] = player;
-            recalcBoard(x, y, player, td);
-            for(int i = 0; i < 8; i++) td[i] = false;
-            drawBoard();
-            player = (player == 1) ? -1 : 1;
-        }
+    private void setPawn(int x, int y, int p, int[][] t, boolean[] td) {
+        t[x][y] = p;
+        recalcBoard(x, y, player, t, td);
     }
 
-    private boolean canSetPawn(int x, int y, int p, int[][] t) {
+    private boolean canSetPawn(int x, int y, int p, int[][] t, boolean[] td) {
         boolean result = false;
-
+        if (t[x][y] != 0) {
+            return false;
+        }
         int cx = x;
         int cy = y;
         int np = (p == 1) ? -1 : 1;
@@ -236,7 +323,7 @@ public class ReversiFrame extends javax.swing.JFrame {
             x--;
         }
         x++;
-        if (x != cx && x!= 0 && t[x - 1][y] == p) {
+        if (x != cx && x != 0 && t[x - 1][y] == p) {
             result = true;
             td[0] = true;
         }
@@ -249,40 +336,40 @@ public class ReversiFrame extends javax.swing.JFrame {
             x++;
         }
         x--;
-        if (x != cx && x!=7 && t[x + 1][y] == p) {
+        if (x != cx && x != 7 && t[x + 1][y] == p) {
             result = true;
             td[1] = true;
         }
         x = cx;
-        
-        
+
+
         //gora
         y--;
         while (y >= 0 && t[x][y] == np) {
             y--;
         }
         y++;
-        if (y != cy && y != 0 && t[x][y-1] == p) {
+        if (y != cy && y != 0 && t[x][y - 1] == p) {
             result = true;
             td[2] = true;
         }
         y = cy;
-        
-        
+
+
         //dol
         y++;
         while (y < 8 && t[x][y] == np) {
             y++;
         }
         y--;
-        if (y != cy && y!= 7 && t[x][y+1] == p) {
+        if (y != cy && y != 7 && t[x][y + 1] == p) {
             result = true;
             td[3] = true;
         }
         y = cy;
-        
-        
-        
+
+
+
         //skos1
         x--;
         y--;
@@ -292,15 +379,15 @@ public class ReversiFrame extends javax.swing.JFrame {
         }
         x++;
         y++;
-        if (x != cx &&  y != cy && x!= 0 && y != 0 && t[x - 1][y-1] == p) {
+        if (x != cx && y != cy && x != 0 && y != 0 && t[x - 1][y - 1] == p) {
             result = true;
             td[4] = true;
         }
         x = cx;
         y = cy;
-        
-        
-        
+
+
+
         //skos2
         x++;
         y++;
@@ -310,15 +397,15 @@ public class ReversiFrame extends javax.swing.JFrame {
         }
         x--;
         y--;
-        if (x != cx &&  y != cy && x !=7 && y != 7 && t[x + 1][y+1] == p) {
+        if (x != cx && y != cy && x != 7 && y != 7 && t[x + 1][y + 1] == p) {
             result = true;
             td[5] = true;
         }
         x = cx;
         y = cy;
-        
-        
-        
+
+
+
         //skos3
         x--;
         y++;
@@ -328,15 +415,15 @@ public class ReversiFrame extends javax.swing.JFrame {
         }
         x++;
         y--;
-        if (x != cx &&  y != cy && y !=7 && x!=0 && t[x - 1][y+1] == p) {
+        if (x != cx && y != cy && y != 7 && x != 0 && t[x - 1][y + 1] == p) {
             result = true;
             td[6] = true;
         }
         x = cx;
         y = cy;
-        
-        
-        
+
+
+
         //skos4
         x++;
         y--;
@@ -346,107 +433,224 @@ public class ReversiFrame extends javax.swing.JFrame {
         }
         x--;
         y++;
-        if (x != cx &&  y != cy && x !=7 && y!=0 && t[x + 1][y-1] == p) {
+        if (x != cx && y != cy && x != 7 && y != 0 && t[x + 1][y - 1] == p) {
             result = true;
             td[7] = true;
         }
-        x = cx;
-        y = cy;
-        
-        
-        
 
         return result;
     }
 
-    private void recalcBoard(int x, int y, int player1, boolean[] td) {
+    private void recalcBoard(int x, int y, int player1, int[][] t, boolean[] td) {
         int cx = x;
         int cy = y;
-        System.out.println("");
 //        for(int i = 0; i < 8; i++) System.out.print(td[i]);
-        if(td[0]) {
+        if (td[0]) {
             x--;
-            while(tab[x][y] != player1) {
-                tab[x][y] = player;
+            while (t[x][y] != player1) {
+                t[x][y] = player1;
                 x--;
             }
             x = cx;
         }
-        
-        if(td[1]) {
+
+        if (td[1]) {
             x++;
-            while(tab[x][y] != player1) {
-                tab[x][y] = player;
+            while (t[x][y] != player1) {
+                t[x][y] = player1;
                 x++;
             }
             x = cx;
         }
-        
-        if(td[2]) {
+
+        if (td[2]) {
             y--;
-            while(tab[x][y] != player1) {
-                tab[x][y] = player;
+            while (t[x][y] != player1) {
+                t[x][y] = player1;
                 y--;
             }
             y = cy;
         }
-        
-        if(td[3]) {
+
+        if (td[3]) {
             y++;
-            while(tab[x][y] != player1) {
-                tab[x][y] = player;
+            while (t[x][y] != player1) {
+                t[x][y] = player1;
                 y++;
             }
             y = cy;
         }
-        
-        if(td[4]) {
+
+        if (td[4]) {
             x--;
             y--;
-            while(tab[x][y] != player1) {
-                tab[x][y] = player;
+            while (t[x][y] != player1) {
+                t[x][y] = player1;
                 x--;
-                y--;
-            }
-            x = cx;
-            y = cy;
-        }
-        
-        if(td[5]) {
-            x++;
-            y++;
-            while(tab[x][y] != player1) {
-                tab[x][y] = player;
-                x++;
-                y++;
-            }
-            x = cx;
-            y = cy;
-        }
-        
-        if(td[6]) {
-            x--;
-            y++;
-            while(tab[x][y] != player1) {
-                tab[x][y] = player;
-                x--;
-                y++;
-            }
-            x = cx;
-            y = cy;
-        }
-        
-        if(td[7]) {
-            x++;
-            y--;
-            while(tab[x][y] != player1) {
-                tab[x][y] = player;
-                x++;
                 y--;
             }
             x = cx;
             y = cy;
         }
-        
+
+        if (td[5]) {
+            x++;
+            y++;
+            while (t[x][y] != player1) {
+                t[x][y] = player1;
+                x++;
+                y++;
+            }
+            x = cx;
+            y = cy;
+        }
+
+        if (td[6]) {
+            x--;
+            y++;
+            while (t[x][y] != player1) {
+                t[x][y] = player1;
+                x--;
+                y++;
+            }
+            x = cx;
+            y = cy;
+        }
+
+        if (td[7]) {
+            x++;
+            y--;
+            while (t[x][y] != player1) {
+                t[x][y] = player1;
+                x++;
+                y--;
+            }
+        }
+
+    }
+
+    public int boardRating(int[][] t) {
+        int eval = 0;
+        int[][] c = t.clone();
+        boolean[] td = new boolean[8];
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                if (moves && canSetPawn(i, j, 1, c, td)) {
+                    eval++;
+                }
+                if (moves && canSetPawn(i, j, -1, c, td)) {
+                    eval--;
+                }
+                if (pawnAmount) {
+                    eval += t[i][j] * 3;
+                }
+                if (pawnPositions && t[i][j] != 0) {
+                    int pl = t[i][j];
+                    if (i == 0 || i == 7) {
+                        if (j == 0 || j == 7) {
+                            //rogi
+                            eval = eval + (pl * 20);
+                        } else if (j == 1 || j == 6) {
+                            //przy rogach
+                            eval = eval + (pl * (-6));
+                        } else {
+                            //boki
+                            eval = eval + (pl * 8);
+                        }
+                    } else if (i == 1 || i == 6) {
+                        if (j < 2 || j > 5) {
+                            //przy rogach
+                            eval = eval + (pl * (-6));
+                        } else {
+                            eval = eval + (pl * (-2));
+                        }
+                    } else {
+                        if (j == 0 || j == 7) {
+                            eval = eval + (pl * 8);
+                        } else if (j == 1 || j == 6) {
+                            eval = eval + (pl * (-2));
+                        } else {
+                            eval = eval + (pl * 2);
+                        }
+                    }
+                }
+            }
+        }
+
+        return eval;
+    }
+
+    private void findBestMove() {
+        int[][] c = copy(tab);
+        int[][] evals = new int[64][3];
+        int counter = 0;
+        boolean[] td = new boolean[8];
+//        printTab(c);
+//        System.out.println(canSetPawn(5, 3, player, c, td));
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                if (canSetPawn(i, j, player, c, td)) {
+                    setPawn(i, j, player, c, td);
+                    recalcBoard(i, j, player, c, td);
+                    evals[counter][0] = boardRating(c);
+                    evals[counter][1] = i;
+                    evals[counter][2] = j;
+                    counter++;
+                    resetTd(td);
+                    c = copy(tab);
+                    //System.out.println("jestem "+ i + " "+ j+ " "+player);
+                }
+            }
+        }
+        for (int i = 0; i < counter; i++) {
+            System.out.println(evals[i][0] + " " + evals[i][1] + " " + evals[i][2]);
+        }
+
+    }
+
+    private void makeTreeLevel(int[][] temp, Node n, int pl) {
+        int[][] c = copy(temp);
+        int counter = 0;
+        ArrayList<Node> children = n.getChildren();
+        boolean[] td = new boolean[8];
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                if (canSetPawn(i, j, pl, c, td)) {
+                    setPawn(i, j, pl, c, td);
+                    recalcBoard(i, j, pl, c, td);
+                    Node node = new Node(boardRating(c));
+                    children.add(node);
+                    counter++;
+                    resetTd(td);
+                    c = copy(temp);
+                    //System.out.println("jestem "+ i + " "+ j+ " "+player);
+                }
+            }
+        }
+    }
+
+    public void resetTd(boolean[] td) {
+        for (int i = 0; i < 8; i++) {
+            td[i] = false;
+        }
+    }
+
+    public void printTab(int[][] t) {
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                System.out.print(t[i][j] + " ");
+            }
+            System.out.println("");
+        }
+    }
+
+    private int[][] copy(int[][] tab) {
+        int[][] c = new int[8][8];
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                c[i][j] = tab[i][j];
+            }
+        }
+        return c;
     }
 }
