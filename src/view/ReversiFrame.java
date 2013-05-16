@@ -4,12 +4,13 @@
  */
 package view;
 
+import controllers.Reversi;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.util.ArrayList;
+import javax.swing.ButtonGroup;
 import structures.Node;
 
 /**
@@ -23,43 +24,86 @@ public class ReversiFrame extends javax.swing.JFrame {
      */
     public int[][] tab;
     int player;
+    int alg = 0;
     boolean started;
-    boolean pawnAmount;
-    boolean moves;
-    boolean pawnPositions;
+    boolean pawnAmount1;
+    boolean moves1;
+    boolean pawnPositions1;
+    boolean pawnAmount2;
+    boolean moves2;
+    boolean pawnPositions2;
+    boolean first;
+    boolean p1;
+    boolean p2;
+    int level;
+    Reversi rev;
+    Node root;
+    int left;
 
     public ReversiFrame() {
         initComponents();
-        tab = new int[8][8];
-        tab[3][3] = 1;
-        tab[3][4] = -1;
-        tab[4][3] = -1;
-        tab[4][4] = 1;
-        player = 1;
-        started = false;
-        pawnAmount = true;
-        pawnPositions = true;
-        moves = true;
+        this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        ButtonGroup rg1 = new ButtonGroup();
+        rg1.add(radioC1);
+        rg1.add(radioH1);
+        ButtonGroup rg2 = new ButtonGroup();
+        rg2.add(radioC2);
+        rg2.add(radioH2);
+
+
         board.addMouseListener(new MouseListener() {
 
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (started) {
-                    Point b = e.getPoint();
-                    int x = (int) b.getX();
-                    int y = (int) b.getY();
-                    x /= 70;
-                    y /= 70;
+                    if (canMove(tab, player)) {
 
-                    if (tab[x][y] == 0) {
-                        //System.out.println(canSetPawn(x, y, player, tab));
-                        boolean[] td = new boolean[8];
-                        if (canSetPawn(x, y, player, tab, td)) {
-                            setPawn(x, y, player, tab, td);
-                            drawBoard();
-                            player = (player == 1) ? -1 : 1;
+                        Point b = e.getPoint();
+                        int x = (int) b.getX();
+                        int y = (int) b.getY();
+                        x /= 70;
+                        y /= 70;
+
+                        if (tab[x][y] == 0) {
+                            //System.out.println(canSetPawn(x, y, player, tab));
+                            boolean[] td = new boolean[8];
+                            if (rev.canSetPawn(x, y, player, tab, td)) {
+                                rev.setPawn(x, y, player, tab, td);
+                                left--;
+                                drawBoard();
+                                setFlag(x, y);
+                                player *= -1;
+                                Node n = root.getChoosenNode(x, y);
+                                root = n;
+                                root.reduceDepth();
+                                if (left > level - 1) {
+                                    rev.addTreeLevel(root, player);
+                                }
+                                if (alg != 3) {
+                                    root.calcEval(alg);
+                                } //
+                                else {
+                                    root.setEval(root.alphabeta(Integer.MIN_VALUE, Integer.MAX_VALUE, true));
+                                }
+                                updateResults();
+
+                                // komp
+                                if (canMove(tab, player)) {
+                                    if (!p2 || !p1) {
+                                        computeMove();
+                                    }
+                                } else {
+                                    player *= -1;
+                                }
+                            }
                         }
-                        System.out.println(boardRating(tab));
+
+                        //System.out.println(rev.boardRating(tab));
+                    } else {
+                        player *= -1;
+                        if (!p2) {
+                            computeMove();
+                        }
                     }
 
                 }
@@ -94,9 +138,31 @@ public class ReversiFrame extends javax.swing.JFrame {
 
         board = new javax.swing.JPanel();
         jButton1 = new javax.swing.JButton();
+        jLabel1 = new javax.swing.JLabel();
+        jLabel2 = new javax.swing.JLabel();
+        jLabel3 = new javax.swing.JLabel();
+        labelAct = new javax.swing.JLabel();
+        labelRed = new javax.swing.JLabel();
+        labelBlue = new javax.swing.JLabel();
+        jLabel4 = new javax.swing.JLabel();
+        labelLevel = new javax.swing.JLabel();
+        jSlider1 = new javax.swing.JSlider();
         jButton2 = new javax.swing.JButton();
-        jButton3 = new javax.swing.JButton();
-        jButton4 = new javax.swing.JButton();
+        jSeparator1 = new javax.swing.JSeparator();
+        jLabel5 = new javax.swing.JLabel();
+        radioH1 = new javax.swing.JRadioButton();
+        radioC1 = new javax.swing.JRadioButton();
+        checkPA1 = new javax.swing.JCheckBox();
+        checkPP1 = new javax.swing.JCheckBox();
+        checkMA1 = new javax.swing.JCheckBox();
+        checkPA2 = new javax.swing.JCheckBox();
+        radioH2 = new javax.swing.JRadioButton();
+        radioC2 = new javax.swing.JRadioButton();
+        jSeparator2 = new javax.swing.JSeparator();
+        jLabel6 = new javax.swing.JLabel();
+        checkMA2 = new javax.swing.JCheckBox();
+        checkPP2 = new javax.swing.JCheckBox();
+        comboAlg = new javax.swing.JComboBox();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -113,33 +179,77 @@ public class ReversiFrame extends javax.swing.JFrame {
             .addGap(0, 558, Short.MAX_VALUE)
         );
 
-        jButton1.setText("jButton1");
+        jButton1.setText("Na pelnej!");
         jButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton1ActionPerformed(evt);
             }
         });
 
-        jButton2.setText("jButton2");
+        jLabel1.setText("Aktualny:");
+
+        jLabel2.setText("Czerwonych:");
+
+        jLabel3.setText("Niebieskich:");
+
+        labelAct.setText("Czerwony");
+
+        labelRed.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+        labelRed.setText("2");
+
+        labelBlue.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+        labelBlue.setText("2");
+
+        jLabel4.setText("Poziom trudnosci:");
+
+        labelLevel.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+        labelLevel.setText("1");
+
+        jSlider1.setMaximum(5);
+        jSlider1.setMinimum(1);
+        jSlider1.setValue(1);
+        jSlider1.addChangeListener(new javax.swing.event.ChangeListener() {
+            public void stateChanged(javax.swing.event.ChangeEvent evt) {
+                jSlider1StateChanged(evt);
+            }
+        });
+
+        jButton2.setText("repaint");
         jButton2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton2ActionPerformed(evt);
             }
         });
 
-        jButton3.setText("tree test");
-        jButton3.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton3ActionPerformed(evt);
-            }
-        });
+        jLabel5.setText("Gracz 1");
 
-        jButton4.setText("mt test");
-        jButton4.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton4ActionPerformed(evt);
-            }
-        });
+        radioH1.setSelected(true);
+        radioH1.setText("Człowiek");
+
+        radioC1.setText("Komputer");
+
+        checkPA1.setSelected(true);
+        checkPA1.setText("Liczba pionków");
+
+        checkPP1.setText("Pozycje pionków");
+
+        checkMA1.setText("Liczba ruchów");
+
+        checkPA2.setSelected(true);
+        checkPA2.setText("Liczba pionków");
+
+        radioH2.setSelected(true);
+        radioH2.setText("Człowiek");
+
+        radioC2.setText("Komputer");
+
+        jLabel6.setText("Gracz 1");
+
+        checkMA2.setText("Liczba ruchów");
+
+        checkPP2.setText("Pozycje pionków");
+
+        comboAlg.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Minimax", "Suma gałęzi", "Minimalizacja strat", "Alfa-beta" }));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -147,81 +257,165 @@ public class ReversiFrame extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(board, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(board, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(jButton3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jButton4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addGap(319, 319, 319)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jButton2)
-                            .addGroup(layout.createSequentialGroup()
-                                .addGap(153, 153, 153)
-                                .addComponent(jButton1)))))
-                .addContainerGap(285, Short.MAX_VALUE))
+                            .addComponent(jLabel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 63, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(labelAct, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(labelRed, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(labelBlue, javax.swing.GroupLayout.PREFERRED_SIZE, 48, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jLabel4)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(labelLevel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(jSlider1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                    .addComponent(jSeparator1)
+                    .addComponent(jSeparator2)
+                    .addComponent(jLabel5)
+                    .addComponent(radioH1)
+                    .addComponent(radioC1)
+                    .addComponent(checkPA1)
+                    .addComponent(checkPP1)
+                    .addComponent(checkMA1)
+                    .addComponent(jLabel6)
+                    .addComponent(radioH2)
+                    .addComponent(radioC2)
+                    .addComponent(checkPA2)
+                    .addComponent(checkPP2)
+                    .addComponent(checkMA2)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                        .addComponent(jButton2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jButton1, javax.swing.GroupLayout.Alignment.LEADING))
+                    .addComponent(comboAlg, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(board, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 18, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addComponent(jButton3)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel1)
+                            .addComponent(labelAct))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addGap(0, 19, Short.MAX_VALUE)
-                                .addComponent(jButton1))
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(jButton4)
-                                .addGap(0, 0, Short.MAX_VALUE))))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addComponent(jButton2)
-                        .addGap(26, 26, 26))))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel2)
+                            .addComponent(labelRed))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel3)
+                            .addComponent(labelBlue))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel4)
+                            .addComponent(labelLevel))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jSlider1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(comboAlg, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jLabel5)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(radioH1)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(radioC1)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(checkPA1)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(checkPP1)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(checkMA1)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(jSeparator2, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jLabel6)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(radioH2)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(radioC2)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(checkPA2)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(checkPP2)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(checkMA2)
+                        .addGap(18, 18, 18)
+                        .addComponent(jButton1)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(jButton2))
+                    .addComponent(board, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+
+        tab = new int[8][8];
+        tab[3][3] = -1;
+        tab[3][4] = 1;
+        tab[4][3] = 1;
+        tab[4][4] = -1;
         drawBoard();
+        moves1 = checkMA1.isSelected();
+        pawnAmount1 = checkPA1.isSelected();
+        pawnPositions1 = checkPP1.isSelected();
+        moves2 = checkMA2.isSelected();
+        pawnAmount2 = checkPA2.isSelected();
+        pawnPositions2 = checkPP2.isSelected();
+        alg = comboAlg.getSelectedIndex();
+        left = 60;
+        player = 1;
+        p1 = (radioH1.isSelected()) ? true : false;
+        p2 = (radioH2.isSelected()) ? true : false;
+        //first = checkFirst.isSelected();
+        started = false;
+        pawnAmount1 = true;
+        pawnPositions1 = true;
+        moves1 = true;
+        rev = new Reversi(moves1, pawnAmount1, pawnPositions1, moves2, pawnAmount2, pawnPositions2);
+        root = new Node(0, tab);
+        drawBoard();
+        level = jSlider1.getValue();
+        for (int i = 0; i < level; i++) {
+            rev.addTreeLevel(root, player);
+        }
         started = true;
+        if (alg != 3) {
+            root.calcEval(alg);
+        } //
+        else {
+            root.alphabeta(Integer.MIN_VALUE, Integer.MAX_VALUE, true);
+        }
+
+        if (!p1) {
+            computeMove();
+        }
+        while (!p1 && !p2 && !rev.isFinished(tab)) {
+            computeMove();
+//            System.out.println(rev.isFinished(tab));
+        }
+
     }//GEN-LAST:event_jButton1ActionPerformed
 
+    private void jSlider1StateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_jSlider1StateChanged
+        labelLevel.setText("" + jSlider1.getValue());
+    }//GEN-LAST:event_jSlider1StateChanged
+
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        findBestMove();
+
+        drawBoard();
     }//GEN-LAST:event_jButton2ActionPerformed
-
-    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-        Node root = new Node(5);
-        root.addNode(new Node(5));
-        root.addNode(new Node(5));
-        Node t = new Node(1);
-        root.getChildren().get(0).addNode(t);
-        t = new Node(-2);
-        root.getChildren().get(0).addNode(t);
-        t = new Node(-1);
-        root.getChildren().get(0).addNode(t);
-        t = new Node(-3);
-        root.getChildren().get(1).addNode(t);
-        t = new Node(7);
-        root.getChildren().get(1).addNode(t);
-        root.calcEval();
-//        root.getChildren().get(0).calcEval();
-        System.out.println(root.getEval());
-    }//GEN-LAST:event_jButton3ActionPerformed
-
-    private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
-        Node root = new Node(0);
-        makeTreeLevel(tab, root, player);
-        System.out.println(root.getChildren().size());
-        root = root.getChildren().get(2);
-        makeTreeLevel(tab, root, player);
-        System.out.println(root.getChildren().size());
-    }//GEN-LAST:event_jButton4ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -241,6 +435,8 @@ public class ReversiFrame extends javax.swing.JFrame {
                 if ("Nimbus".equals(info.getName())) {
                     javax.swing.UIManager.setLookAndFeel(info.getClassName());
                     break;
+
+
                 }
             }
         } catch (ClassNotFoundException ex) {
@@ -266,20 +462,47 @@ public class ReversiFrame extends javax.swing.JFrame {
     }
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel board;
+    private javax.swing.JCheckBox checkMA1;
+    private javax.swing.JCheckBox checkMA2;
+    private javax.swing.JCheckBox checkPA1;
+    private javax.swing.JCheckBox checkPA2;
+    private javax.swing.JCheckBox checkPP1;
+    private javax.swing.JCheckBox checkPP2;
+    private javax.swing.JComboBox comboAlg;
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
-    private javax.swing.JButton jButton3;
-    private javax.swing.JButton jButton4;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel jLabel6;
+    private javax.swing.JSeparator jSeparator1;
+    private javax.swing.JSeparator jSeparator2;
+    private javax.swing.JSlider jSlider1;
+    private javax.swing.JLabel labelAct;
+    private javax.swing.JLabel labelBlue;
+    private javax.swing.JLabel labelLevel;
+    private javax.swing.JLabel labelRed;
+    private javax.swing.JRadioButton radioC1;
+    private javax.swing.JRadioButton radioC2;
+    private javax.swing.JRadioButton radioH1;
+    private javax.swing.JRadioButton radioH2;
     // End of variables declaration//GEN-END:variables
 
     private void drawBoard() {
+
         drawLines();
         drawPawns();
+
     }
 
     private void drawLines() {
         int act = 0;
         Graphics g = board.getGraphics();
+        g.setColor(new Color(240, 240, 240));
+        g.fillRect(0, 0, board.getWidth(), board.getHeight());
+        g.setColor(Color.BLACK);
         for (int i = 0; i < 9; i++) {
             g.drawLine(0, act, 570, act);
             g.drawLine(act, 0, act, 570);
@@ -303,354 +526,73 @@ public class ReversiFrame extends javax.swing.JFrame {
         }
     }
 
-    private void setPawn(int x, int y, int p, int[][] t, boolean[] td) {
-        t[x][y] = p;
-        recalcBoard(x, y, player, t, td);
+    private void setFlag(int x, int y) {
+        Graphics g = board.getGraphics();
+        g.fillOval(x * 70 + 25, y * 70 + 25, 20, 20);
     }
 
-    private boolean canSetPawn(int x, int y, int p, int[][] t, boolean[] td) {
-        boolean result = false;
-        if (t[x][y] != 0) {
-            return false;
-        }
-        int cx = x;
-        int cy = y;
-        int np = (p == 1) ? -1 : 1;
-
-        // lewo
-        x--;
-        while (x >= 0 && t[x][y] == np) {
-            x--;
-        }
-        x++;
-        if (x != cx && x != 0 && t[x - 1][y] == p) {
-            result = true;
-            td[0] = true;
-        }
-        x = cx;
-
-
-        //prawo
-        x++;
-        while (x < 8 && t[x][y] == np) {
-            x++;
-        }
-        x--;
-        if (x != cx && x != 7 && t[x + 1][y] == p) {
-            result = true;
-            td[1] = true;
-        }
-        x = cx;
-
-
-        //gora
-        y--;
-        while (y >= 0 && t[x][y] == np) {
-            y--;
-        }
-        y++;
-        if (y != cy && y != 0 && t[x][y - 1] == p) {
-            result = true;
-            td[2] = true;
-        }
-        y = cy;
-
-
-        //dol
-        y++;
-        while (y < 8 && t[x][y] == np) {
-            y++;
-        }
-        y--;
-        if (y != cy && y != 7 && t[x][y + 1] == p) {
-            result = true;
-            td[3] = true;
-        }
-        y = cy;
-
-
-
-        //skos1
-        x--;
-        y--;
-        while (x >= 0 && y >= 0 && t[x][y] == np) {
-            x--;
-            y--;
-        }
-        x++;
-        y++;
-        if (x != cx && y != cy && x != 0 && y != 0 && t[x - 1][y - 1] == p) {
-            result = true;
-            td[4] = true;
-        }
-        x = cx;
-        y = cy;
-
-
-
-        //skos2
-        x++;
-        y++;
-        while (x < 8 && y < 8 && t[x][y] == np) {
-            x++;
-            y++;
-        }
-        x--;
-        y--;
-        if (x != cx && y != cy && x != 7 && y != 7 && t[x + 1][y + 1] == p) {
-            result = true;
-            td[5] = true;
-        }
-        x = cx;
-        y = cy;
-
-
-
-        //skos3
-        x--;
-        y++;
-        while (x >= 0 && y < 8 && t[x][y] == np) {
-            x--;
-            y++;
-        }
-        x++;
-        y--;
-        if (x != cx && y != cy && y != 7 && x != 0 && t[x - 1][y + 1] == p) {
-            result = true;
-            td[6] = true;
-        }
-        x = cx;
-        y = cy;
-
-
-
-        //skos4
-        x++;
-        y--;
-        while (x < 8 && y >= 0 && t[x][y] == np) {
-            x++;
-            y--;
-        }
-        x--;
-        y++;
-        if (x != cx && y != cy && x != 7 && y != 0 && t[x + 1][y - 1] == p) {
-            result = true;
-            td[7] = true;
-        }
-
-        return result;
+    private void updateResults() {
+        String actuall = (player == 1) ? "Czerwony" : "Niebieski";
+        labelAct.setText(actuall);
+        int[] res = rev.result(tab);
+        labelRed.setText("" + res[0]);
+        labelBlue.setText("" + res[1]);
     }
 
-    private void recalcBoard(int x, int y, int player1, int[][] t, boolean[] td) {
-        int cx = x;
-        int cy = y;
-//        for(int i = 0; i < 8; i++) System.out.print(td[i]);
-        if (td[0]) {
-            x--;
-            while (t[x][y] != player1) {
-                t[x][y] = player1;
-                x--;
-            }
-            x = cx;
-        }
+    private void computeMove() {
+        if (!canMove(tab, player)) {
+//            System.out.println("zmiana"+player);
+            player *= -1;
+            for (int i = 0; i < level; i++) {
 
-        if (td[1]) {
-            x++;
-            while (t[x][y] != player1) {
-                t[x][y] = player1;
-                x++;
+                rev.addTreeLevel(root, player);
             }
-            x = cx;
         }
-
-        if (td[2]) {
-            y--;
-            while (t[x][y] != player1) {
-                t[x][y] = player1;
-                y--;
+//        System.out.println(player);
+//        System.out.println(root.bestPath(player));
+//        System.out.println(player);
+        try {
+            boolean[] td = new boolean[8];
+            String[] m = root.bestPath(player).split(" ");
+            int x = Integer.valueOf(m[0]);
+            int y = Integer.valueOf(m[1]);
+//            System.out.println(x + " "+ y);
+//            System.out.println(rev.canSetPawn(x, y, player, tab, td));
+            rev.canSetPawn(x, y, player, tab, td);
+            rev.setPawn(x, y, player, tab, td);
+            left--;
+            drawBoard();
+            setFlag(x, y);
+            player *= -1;
+            Node n = root.getChoosenNode(x, y);
+            root = n;
+            root.reduceDepth();
+            if (left > level - 1) {
+                rev.addTreeLevel(root, player);
             }
-            y = cy;
-        }
+            updateResults();
+        } catch (Exception e) {
 
-        if (td[3]) {
-            y++;
-            while (t[x][y] != player1) {
-                t[x][y] = player1;
-                y++;
-            }
-            y = cy;
-        }
+            for (int i = 0; i < level; i++) {
 
-        if (td[4]) {
-            x--;
-            y--;
-            while (t[x][y] != player1) {
-                t[x][y] = player1;
-                x--;
-                y--;
-            }
-            x = cx;
-            y = cy;
-        }
-
-        if (td[5]) {
-            x++;
-            y++;
-            while (t[x][y] != player1) {
-                t[x][y] = player1;
-                x++;
-                y++;
-            }
-            x = cx;
-            y = cy;
-        }
-
-        if (td[6]) {
-            x--;
-            y++;
-            while (t[x][y] != player1) {
-                t[x][y] = player1;
-                x--;
-                y++;
-            }
-            x = cx;
-            y = cy;
-        }
-
-        if (td[7]) {
-            x++;
-            y--;
-            while (t[x][y] != player1) {
-                t[x][y] = player1;
-                x++;
-                y--;
+                rev.addTreeLevel(root, player);
             }
         }
 
     }
 
-    public int boardRating(int[][] t) {
-        int eval = 0;
-        int[][] c = t.clone();
+    private boolean canMove(int[][] t, int p) {
         boolean[] td = new boolean[8];
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
-                if (moves && canSetPawn(i, j, 1, c, td)) {
-                    eval++;
+                if (rev.canSetPawn(i, j, p, t, td)) {
+//                    System.out.println(player + " sdsadfgs " + i + " sdadasdas " + j);
+                    return true;
                 }
-                if (moves && canSetPawn(i, j, -1, c, td)) {
-                    eval--;
-                }
-                if (pawnAmount) {
-                    eval += t[i][j] * 3;
-                }
-                if (pawnPositions && t[i][j] != 0) {
-                    int pl = t[i][j];
-                    if (i == 0 || i == 7) {
-                        if (j == 0 || j == 7) {
-                            //rogi
-                            eval = eval + (pl * 20);
-                        } else if (j == 1 || j == 6) {
-                            //przy rogach
-                            eval = eval + (pl * (-6));
-                        } else {
-                            //boki
-                            eval = eval + (pl * 8);
-                        }
-                    } else if (i == 1 || i == 6) {
-                        if (j < 2 || j > 5) {
-                            //przy rogach
-                            eval = eval + (pl * (-6));
-                        } else {
-                            eval = eval + (pl * (-2));
-                        }
-                    } else {
-                        if (j == 0 || j == 7) {
-                            eval = eval + (pl * 8);
-                        } else if (j == 1 || j == 6) {
-                            eval = eval + (pl * (-2));
-                        } else {
-                            eval = eval + (pl * 2);
-                        }
-                    }
-                }
+                td = new boolean[8];
             }
         }
+        return false;
 
-        return eval;
-    }
-
-    private void findBestMove() {
-        int[][] c = copy(tab);
-        int[][] evals = new int[64][3];
-        int counter = 0;
-        boolean[] td = new boolean[8];
-//        printTab(c);
-//        System.out.println(canSetPawn(5, 3, player, c, td));
-        for (int i = 0; i < 8; i++) {
-            for (int j = 0; j < 8; j++) {
-                if (canSetPawn(i, j, player, c, td)) {
-                    setPawn(i, j, player, c, td);
-                    recalcBoard(i, j, player, c, td);
-                    evals[counter][0] = boardRating(c);
-                    evals[counter][1] = i;
-                    evals[counter][2] = j;
-                    counter++;
-                    resetTd(td);
-                    c = copy(tab);
-                    //System.out.println("jestem "+ i + " "+ j+ " "+player);
-                }
-            }
-        }
-        for (int i = 0; i < counter; i++) {
-            System.out.println(evals[i][0] + " " + evals[i][1] + " " + evals[i][2]);
-        }
-
-    }
-
-    private void makeTreeLevel(int[][] temp, Node n, int pl) {
-        int[][] c = copy(temp);
-        int counter = 0;
-        ArrayList<Node> children = n.getChildren();
-        boolean[] td = new boolean[8];
-        for (int i = 0; i < 8; i++) {
-            for (int j = 0; j < 8; j++) {
-                if (canSetPawn(i, j, pl, c, td)) {
-                    setPawn(i, j, pl, c, td);
-                    recalcBoard(i, j, pl, c, td);
-                    Node node = new Node(boardRating(c));
-                    children.add(node);
-                    counter++;
-                    resetTd(td);
-                    c = copy(temp);
-                    //System.out.println("jestem "+ i + " "+ j+ " "+player);
-                }
-            }
-        }
-    }
-
-    public void resetTd(boolean[] td) {
-        for (int i = 0; i < 8; i++) {
-            td[i] = false;
-        }
-    }
-
-    public void printTab(int[][] t) {
-        for (int i = 0; i < 8; i++) {
-            for (int j = 0; j < 8; j++) {
-                System.out.print(t[i][j] + " ");
-            }
-            System.out.println("");
-        }
-    }
-
-    private int[][] copy(int[][] tab) {
-        int[][] c = new int[8][8];
-        for (int i = 0; i < 8; i++) {
-            for (int j = 0; j < 8; j++) {
-                c[i][j] = tab[i][j];
-            }
-        }
-        return c;
     }
 }
